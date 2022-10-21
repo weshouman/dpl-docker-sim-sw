@@ -1,0 +1,119 @@
+# syntax=docker/dockerfile:1
+# Scilab is in the AUR, thus we'll need the development tools
+FROM archlinux:base-devel
+
+ARG SCILAB_VERSION=6.0.2
+
+ENV GLIBC_VERSION 2.35-r0
+
+#RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata
+
+#WORKDIR /scilab
+
+# Update (-Syu) only for the first run
+RUN pacman -Syu --noconfirm
+RUN pacman -S git x11vnc xorg-server --noconfirm
+
+RUN useradd -ms /bin/bash -G wheel builder
+#RUN echo "builder:docker" | chpasswd
+# makepkg requires a sudoer but not the root user
+RUN echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+#RUN mkdir /scilab/scilab
+#RUN chown builder:builder /scilab/scilab
+
+WORKDIR /opt
+RUN git clone https://aur.archlinux.org/yay-git.git
+RUN chown -R builder:builder ./yay-git
+
+USER builder
+WORKDIR /opt/yay-git
+RUN makepkg -si --noconfirm
+
+
+WORKDIR /home/builder
+
+# Fetch scilab's binaries
+# RUN apk add wget tar
+# RUN wget -L https://www.scilab.org/download/${SCILAB_VERSION}/scilab-${SCILAB_VERSION}.bin.linux-x86_64.tar.gz
+# RUN tar xzvf scilab-${SCILAB_VERSION}.bin.linux-x86_64.tar.gz
+
+
+# Fetch scilab's sources
+RUN git clone https://aur.archlinux.org/scilab.git
+# we could use RUN `yay -G scilab` too
+
+
+WORKDIR /home/builder/scilab
+
+# USER root
+# RUN pacman -U scilab --noconfirm
+
+USER root
+# due to the existence of multiple versions, we need to install one explicitly before yay-ing
+#  to allow a non-prompting headless run
+# jdk8 fails, jdk18 fails too, jdk11 is tested to be passing, check the java-testng AUR page for details
+# Tip: Use `archlinux-java set java-17-openjdk` to change the selected java version
+# Tip: Use `java --version` to show the selected version
+# jdk11 and jdk17 should work
+#-RUN pacman -S --asdeps jdk17-openjdk jre17-openjdk --noconfirm
+
+USER builder
+#RUN makepkg -si --noconfirm
+#WORKDIR /scilab/scilab-${SCILAB_VERSION}/
+
+RUN yay -Syu deal-ii --answerdiff=None --noremovemake --pgpfetch --answerclean=None --noconfirm
+#RUN yay --answerdiff=None --noremovemake --pgpfetch --answerclean=None --noconfirm --asdeps -S bwidget
+
+##### This sections use lucene 8.11.2 instead of the default 9.4.0, both are failing anyway, older versions are not available by apache anymore
+
+COPY context .
+# Run custom builds
+#RUN ./lucene-8.11.2.sh
+
+
+### When the AUR scilab is building successfully again, we could use
+
+### WE USE THE FOLLOWING CAUSE THE MAIN PKGBUILD FAILS
+
+#-RUN git clone https://github.com/bartoszek/AUR-scilab
+# Could be replaced with 
+# RUN yay -G scilab
+
+# PKGBUILD_LATEST.patch could be used to use the latest on branch 6.1
+#RUN patch -u PKGBUILD -i ../PKGBUILD.patch
+#-RUN patch -u PKGBUILD -i ./PKGBUILD_LATEST.patch
+
+# RUN yay -Syu scilab --answerdiff=None --noremovemake --pgpfetch --answerclean=None --noconfirm --asdeps
+# 
+# RUN makepkg -si
+
+### FAILURE
+# linking to apache-lucene fails, for both 8.11.2 and 9.4.0 versions
+# However scilab introduced a fix for 8.11.2
+
+##### FOR DEBUGGING PURPOSES USE THE FOLLOWING
+
+# # install asdeps, as the pkgbuild needs to be adjusted, and makepkg does NOT install dependencies from AUR
+# RUN yay -Syu scilab --answerdiff=None --noremovemake --pgpfetch --answerclean=All --noconfirm --asdeps
+# # FAILURE: the scilab source tarball link is dead, which gives a return of 1, skipping that (for example use `... | true` would tolerate all errors, for example if a package with not downloaded due to internet connection interrupts won't be reported, thus failing the makepkg pretty badly)
+# # The fix is to install the AUR packages by oneself, then makepkg the patched PKGBUILD
+# 
+# # If the previous command fails before installing some packages, install them manually till you are sure which ones are failing
+# # in my case the java-testng was failing, as it needed jvm18's javadoc which gets installed through the jdk-openjdk
+# RUN yay -Syu xalan-java --answerdiff=None --noremovemake --pgpfetch --answerclean=None --noconfirm --asdeps
+# RUN yay -Syu java-testng --answerdiff=None --noremovemake --pgpfetch --answerclean=None --noconfirm --asdeps
+# RUN yay -Syu "jogl>=2.3.2" --answerdiff=None --noremovemake --pgpfetch --answerclean=None --noconfirm --asdeps
+# RUN yay -Syu "apache-lucene>=7" --answerdiff=None --noremovemake --pgpfetch --answerclean=None --noconfirm --asdeps
+# 
+# # makepkg know has the deps installed, we need to call it to use our custom pkgbuild
+# RUN makepkg -si --noconfirm
+
+#-RUN makepkg -sid --noconfirm
+
+###### END OF DEBUGGING
+
+#CMD ["/bin/sh"]
+#-CMD ["/scilab/startup.sh"]
+EXPOSE 5920
+
