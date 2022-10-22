@@ -1,0 +1,65 @@
+# syntax=docker/dockerfile:1
+FROM ubuntu:22.04
+
+ARG SCILAB_VERSION=6.0.2
+
+ENV GLIBC_VERSION 2.35-r0
+
+RUN apt update
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata
+
+WORKDIR /build
+
+RUN apt update
+RUN apt install git -y
+#RUN apt install build-essential gfortran ocaml openjdk-8-jdk ant libgl-dev gettext pkg-config -y
+
+####### I CAN NOT RECOMMEND IT ANY LESS to skip verification in an automated script ... :| ######
+RUN git clone -c http.sslVerify=false https://conan2.iwr.uni-heidelberg.de/git/peter/dune-installer.git
+RUN sed -i "s#for i in functions uggrid typetree#for i in functions uggrid typetree python#g" dune-installer/core-2.7.1/installer.sh
+
+RUN apt install x11vnc xvfb -y
+
+RUN apt-get install -y pkg-config
+RUN apt-get install -y build-essential gfortran
+
+RUN ./dune-installer/core-2.7.1/installer.sh my-dune-dir
+
+RUN apt install -y cmake
+WORKDIR /build/my-dune-dir
+RUN ./buildmodules.sh
+
+# msgcat requires gettext
+# javac requires openjdk-8-jdk
+# RUN apt install build-essential gfortran ocaml ant libxml2-dev gettext libarpack2-dev -y
+# RUN apt install openjdk-8-jdk openjdk-8-jre libjogl2-java libgl-dev libcurl4-openssl-dev zlib1g-dev -y
+
+# openjdk10 removed javah util which is needed for ./configure step
+#RUN apk add alpine-sdk gfortran ocaml openjdk9-jdk apache-ant
+
+#RUN apk add glib-dev # either this is need for the GL.h or libgl1-mesa-dev
+
+#     RUN sed -i "s#CURL_LIBS=`$CURL_CONFIG --libs`#CURL_LIBS=`-l/usr/lib/x86_64-linux-gnu/libcurl.so.4.5.0`#g" configure
+
+
+### FAILURE
+# make fails due to the following error
+#   libtool: compile:  gfortran -DNDEBUG -m64 -fPIC -I../../modules/core/includes/ -g -O2 -c src/fortran/optml2.f  -fPIC -o src/fortran/.libs/optml2.o
+#   src/fortran/optml2.f:172:50:
+#   
+#     162 |         if (info .gt. 1) call outl2(30,nq,nq,q,xx,t,tout)
+#         |                                               2   
+#   ......
+#     172 |         if (info .gt. 1) call outl2(31,nq,nbout,q,dnorm0,t,tout)
+#         |                                                  1
+#   Error: Rank mismatch between actual argument at (1) and actual argument at (2) (rank-1 and scalar)
+#   make[2]: *** [Makefile:1708: src/fortran/optml2.lo] Error 1
+#   make[2]: Leaving directory '/scilab/scilab-6.0.2/modules/cacsd'
+#   make[1]: *** [Makefile:827: all-recursive] Error 1
+#   make[1]: Leaving directory '/scilab/scilab-6.0.2/modules'
+#   make: *** [Makefile:1601: all-recursive] Error 1
+#
+
+#CMD ["/bin/sh"]
+EXPOSE 5920
+
