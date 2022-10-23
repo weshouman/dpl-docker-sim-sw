@@ -1,0 +1,27 @@
+# syntax=docker/dockerfile:1
+FROM archlinux:base-devel
+
+# Update (-Syu) only for the first run
+RUN pacman -Syu --noconfirm
+RUN pacman -S git --noconfirm
+
+RUN useradd -ms /bin/bash -G wheel builder
+# makepkg requires a sudoer but not the root user
+RUN echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+WORKDIR /opt
+RUN git clone https://aur.archlinux.org/yay-git.git
+RUN chown -R builder:builder ./yay-git
+
+USER builder
+WORKDIR /opt/yay-git
+RUN makepkg -si --noconfirm
+
+
+WORKDIR /home/builder
+
+USER builder
+
+RUN yay --answerdiff=None --noremovemake --pgpfetch --answerclean=None --noconfirm --asdeps -S lammps
+
+
