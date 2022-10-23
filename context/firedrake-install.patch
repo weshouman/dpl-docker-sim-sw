@@ -1,0 +1,19 @@
+--- firedrake-install-origin	2022-10-23 00:20:01.729146902 +0000
++++ firedrake-install	2022-10-23 00:18:07.922518821 +0000
+@@ -812,13 +812,13 @@
+         if options["disable_ssh"]:
+             raise InstallError("Skipping ssh clone because --disable-ssh")
+         # note: so far only loopy requires submodule
+-        check_call(["git", "clone", "-q", "--recursive", git_url(plain_url, "ssh")])
++        check_call(["git", "clone", "-q", "--recursive", "--depth 1", git_url(plain_url, "ssh")])
+         log.info("Successfully cloned repository %s" % name)
+     except (subprocess.CalledProcessError, InstallError):
+         if not options["disable_ssh"]:
+             log.warning("Failed to clone %s using ssh, falling back to https." % name)
+         try:
+-            check_call(["git", "clone", "-q", "--recursive", git_url(plain_url, "https")])
++            check_call(["git", "clone", "-q", "--recursive", "--depth", "1", git_url(plain_url, "https")])
+             log.info("Successfully cloned repository %s." % name)
+         except subprocess.CalledProcessError:
+             log.error("Failed to clone %s branch %s." % (name, branch))
+

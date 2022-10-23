@@ -1,0 +1,38 @@
+# syntax=docker/dockerfile:1
+# Following https://docs.fenicsproject.org/dolfinx/main/python/installation.html
+FROM ubuntu:22.04
+
+RUN apt update
+
+# Support sudoers to exist, needed for firedrake-install
+RUN apt install -y sudo
+
+RUN apt install -y git
+RUN apt install -y python3
+RUN apt install -y python3-pip
+RUN apt install -y curl
+# tzdata requires special handling as it does not respect the noninteractive and -y alone
+# and it's required in the firedrake-install
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata
+
+# here for debugging purposes
+RUN apt install vim -y
+
+# firedrake expects a sudoer but not the root
+#RUN useradd -ms /bin/bash -G sudo builder
+#RUN usermod -aG sudo builder
+RUN useradd -rm -d /home/builder -s /bin/bash -g root -G sudo -u 1001 builder
+
+USER builder
+WORKDIR /home/builder
+
+# needed for the install procedures
+RUN pip install setuptools
+
+RUN curl -O https://raw.githubusercontent.com/firedrakeproject/firedrake/master/scripts/firedrake-install
+
+# save some time
+COPY context .
+RUN patch -u firedrake-install -i firedrake-install.patch
+
+RUN python3 firedrake-install
