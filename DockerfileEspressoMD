@@ -1,6 +1,5 @@
 # syntax=docker/dockerfile:1
-# Scilab is in the AUR, thus we'll need the development tools
-FROM archlinux:base-devel
+FROM cuda-arch
 
 ENV GLIBC_VERSION 2.35-r0
 
@@ -30,8 +29,6 @@ WORKDIR /home/builder
 USER builder
 #RUN makepkg -si --noconfirm
 
-RUN yay --answerdiff=None --noremovemake --pgpfetch --answerclean=None --noconfirm --asdeps -S 'cuda: Build with NVIDIA GPU support'
-
 RUN yay --answerdiff=None --noremovemake --pgpfetch --answerclean=None --noconfirm --asdeps -S python-numpy
 RUN yay --answerdiff=None --noremovemake --pgpfetch --answerclean=None --noconfirm --asdeps -S python-opengl
 RUN yay --answerdiff=None --noremovemake --pgpfetch --answerclean=None --noconfirm --asdeps -S python-sphinx
@@ -44,7 +41,6 @@ COPY context .
 RUN ./install_python-griddataformats.sh
 
 RUN yay --answerdiff=None --noremovemake --pgpfetch --answerclean=None --noconfirm --asdeps -S 'python-mdanalysis>=0.16'
-RUN yay --answerdiff=None --noremovemake --pgpfetch --answerclean=None --noconfirm --asdeps -S 'hdf5: File format to store scientific data'
 RUN yay --answerdiff=None --noremovemake --pgpfetch --answerclean=None --noconfirm --asdeps -S 'hdf5-openmpi: File format to store scientific data(openmpi version)'
 RUN yay --answerdiff=None --noremovemake --pgpfetch --answerclean=None --noconfirm --asdeps -S 'boost>=1.67'
 RUN yay --answerdiff=None --noremovemake --pgpfetch --answerclean=None --noconfirm --asdeps -S 'cmake>=3.4'
