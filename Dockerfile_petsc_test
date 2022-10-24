@@ -1,0 +1,32 @@
+# syntax=docker/dockerfile:1
+FROM petsc_build
+
+USER root
+
+RUN pacman --noconfirm -Syu
+
+# needed for the mpiexec
+RUN pacman --noconfirm -S openssh
+
+USER builder
+
+# get qsub command, installing it takes a long time though
+#RUN yay --answerdiff=None --noremovemake --pgpfetch --answerclean=None --noconfirm -S torque
+
+# used for the yay installation
+#ARG BASE_DIR=/opt/
+# used for the makepkg installation
+ARG BASE_DIR=/home/builder/petsc/pkg/petsc/opt/petsc/linux-c-opt/
+
+# follow https://www.mcs.anl.gov/petsc/petsc-3.7-atpesc2016/tutorials/HandsOnExercise.html
+WORKDIR ${BASE_DIR}share/petsc/examples/src/ksp/ksp/tutorials
+RUN export PETSC_DIR=${BASE_DIR} && \
+    make ex50 && \
+    mpiexec -n 1 ./ex50  -da_grid_x 4 -da_grid_y 4 -mat_view
+
+# qsub gives the following error 
+# `qsub: script file 'c16' cannot be loaded - No such file or directory`
+#RUN qsub -t 10 -q training -A ATPESC2016 --mode c16 -n 1 --proccount 1 ./ex50 -da_grid_x 4 -da_grid_y 4 -mat_view
+# runjob: command not found
+#RUN runjob --block $COBALT_PARTNAME -p 16 --np 1 : ./ex50 -da_grid_x 4 -da_grid_y 4 -mat_view
+

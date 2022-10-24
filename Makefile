@@ -1,4 +1,4 @@
-TYPICAL_APPS = deal2 dune dumux eigen firedrake fenicsx gmsh lammps palabos
+TYPICAL_APPS = deal2 dune dumux eigen firedrake fenicsx gmsh lammps palabos petsc petsc_test precice
 
 $(addprefix build_,$(TYPICAL_APPS)):
 	@#echo target is $@, app is $(@:build_%=%)
