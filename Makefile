@@ -16,3 +16,11 @@ build_espressomd:
 run_espressomd:
 	docker run --rm -it --entrypoint /bin/bash espressomd_build
 
+debug:
+	docker run --rm -it --entrypoint /bin/bash $(image)
+
+debug_root:
+	docker run -u root --rm -it --entrypoint /bin/bash $(image)
+
+debug_builder:
+	docker run -u builder --rm -it --entrypoint /bin/bash $(image)
