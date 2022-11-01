@@ -1,0 +1,38 @@
+site_name: "A Unified Approach for Simulation SW Development in Isolation"
+
+nav:
+  - "Build Process Isolation": build-process-isolation.md
+  - "Software Environment Isolation": sw-env-isolation.md
+
+plugins:
+  - search
+  - macros
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+
+  - toc:
+      permalink: true
+
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed
+  - pymdownx.snippets
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.arithmatex:
+      generic: true
+
+repo_url: https://github.com/weshouman/dpl-docker-sim-sw
+repo_name: weshouman/dpl-docker-sim-sw
+
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github-square
+
+extra_javascript:
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
